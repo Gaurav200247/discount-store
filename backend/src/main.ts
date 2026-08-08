@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 
@@ -13,6 +14,20 @@ async function bootstrap(): Promise<void> {
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // ------------------------------------------------------------------
+  // Swagger docs
+  // ------------------------------------------------------------------
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle("Ecommerce Discount API")
+    .setDescription("Carts, products, checkout discounts and coupons")
+    .setVersion("1.0")
+    .build();
+  SwaggerModule.setup(
+    "api",
+    app,
+    SwaggerModule.createDocument(app, swaggerConfig),
+  );
 
   // ------------------------------------------------------------------
   // Listen
@@ -32,6 +47,7 @@ async function bootstrap(): Promise<void> {
   // ------------------------------------------------------------------
   logger.log("============================================================");
   logger.log(`  Listening on ${url}`);
+  logger.log(`  API docs at ${url}/api`);
   logger.log("============================================================");
 
   // ------------------------------------------------------------------
