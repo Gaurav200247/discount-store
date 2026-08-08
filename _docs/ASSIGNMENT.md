@@ -1,16 +1,17 @@
 # Assignment
 
-You are designing an ecommerce store. Clients can add items to their cart and checkout to successfully place an order.  The store has a discount system that rewards customers.
+You are designing an ecommerce store. Clients can add items to their cart and checkout to successfully place an order. The store has a discount system that rewards customers.
 
-We would like you to design and implement APIs for adding items to cart and checkout functionality. The checkout API would validate if the discount code is valid before giving the discount. 
+We would like you to design and implement APIs for adding items to cart and checkout functionality. The checkout API would validate if the discount code is valid before giving the discount.
 
-Discount System works in the following ways - Every Every *n*th order gets a coupon code for x% discount. Discount codes can be applied at checkout. 
+Discount System works in the following ways - Every Every *n*th order gets a coupon code for x% discount. Discount codes can be applied at checkout.
 
 The store also has two admin API's:
-1. Generate a discount code if the condition above is satisfied.
-2. Lists count of items purchased, revenue, discount codes and total discounts given. 
 
-You can build this with a technology stack that you are comfortable with. You would push the code to your github repo and share the link once its complete. We would like to see your commits that show progression and thought process as to how you are completing the exercise. 
+1. Generate a discount code if the condition above is satisfied.
+2. Lists count of items purchased, revenue, discount codes and total discounts given.
+
+You can build this with a technology stack that you are comfortable with. You would push the code to your github repo and share the link once its complete. We would like to see your commits that show progression and thought process as to how you are completing the exercise.
 
 ## What We're Looking For
 
@@ -19,6 +20,7 @@ We want to see **how you think**, not just that you can produce working code. Yo
 ### Required Deliverables
 
 #### 1. Working Code
+
 - Functional APIs (backend required, frontend is a plus)
 - Code quality
 - In-memory store is fine (no database needed)
@@ -26,6 +28,7 @@ We want to see **how you think**, not just that you can produce working code. Yo
 - Code comments, readme docs
 
 #### 2. DECISIONS.md (Required)
+
 Create a `DECISIONS.md` file documenting **at least 5 design decisions** you made. For each decision:
 
 ```markdown
@@ -34,6 +37,7 @@ Create a `DECISIONS.md` file documenting **at least 5 design decisions** you mad
 **Context:** What problem were you solving?
 
 **Options Considered:**
+
 - Option A: [description]
 - Option B: [description]
 
@@ -41,6 +45,7 @@ Create a `DECISIONS.md` file documenting **at least 5 design decisions** you mad
 
 **Why:** [Your reasoning - trade-offs, constraints, future considerations]
 ```
+
 ## Submission
 
 1. Push to your GitHub repo
@@ -51,8 +56,8 @@ Create a `DECISIONS.md` file documenting **at least 5 design decisions** you mad
    - Tests
 3. Share the repo link
 
-
 ## FAQ:
+
 **Q: Can I use AI tools like GitHub Copilot or ChatGPT?**  
 A: Yes! But you must understand and be able to explain every line of code. We will ask about your implementation in the follow-up interview.
 
