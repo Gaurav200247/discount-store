@@ -1,13 +1,16 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
   BadgeCheck,
+  Check,
   CheckCircle2,
+  Copy,
   CreditCard,
   Loader2,
   ShoppingCart,
+  Sparkles,
   Tag,
   X,
 } from "lucide-react";
@@ -16,6 +19,14 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/context/cart";
 import { formatPrice } from "@/lib/format";
@@ -33,6 +44,14 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [couponDialogOpen, setCouponDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (order?.earnedCoupon) {
+      setCouponDialogOpen(true);
+    }
+  }, [order]);
 
   const productsById = new Map((products ?? []).map((p) => [p.id, p]));
   const lineItems = Object.entries(quantitiesByProductId)
@@ -55,6 +74,8 @@ export default function CheckoutPage() {
       const result = await checkout(couponCode.trim() || undefined);
       setOrder(result);
       void queryClient.invalidateQueries({ queryKey: ["products"] });
+      void queryClient.invalidateQueries({ queryKey: ["stats"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
     } catch (err) {
       setError(
         err instanceof Error
@@ -71,10 +92,22 @@ export default function CheckoutPage() {
     setSearchParams({}, { replace: true });
   }
 
+  async function copyCouponCode() {
+    if (!order?.earnedCoupon) return;
+    try {
+      await navigator.clipboard.writeText(order.earnedCoupon.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable — the code is still shown below.
+    }
+  }
+
   if (order) {
     return (
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-        <div className="flex items-center gap-2">
+      <>
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+          <div className="flex items-center gap-2">
           <CheckCircle2 className="size-5 text-primary" />
           <h1 className="text-2xl font-bold">Order confirmed</h1>
         </div>
@@ -135,6 +168,22 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {order.earnedCoupon && (
+              <div className="flex items-start justify-between gap-3 rounded-md border border-primary/40 bg-primary/10 px-4 py-3 text-sm">
+                <span className="flex items-start gap-2 text-primary">
+                  <Sparkles className="mt-0.5 size-4 shrink-0" />
+                  <span>
+                    You earned a coupon!{" "}
+                    <span className="font-mono font-semibold">
+                      {order.earnedCoupon.code}
+                    </span>{" "}
+                    ({order.earnedCoupon.discountPercent}% off) — usable on any
+                    order.
+                  </span>
+                </span>
+              </div>
+            )}
+
             <Button asChild>
               <Link to="/">
                 Continue shopping
@@ -144,6 +193,56 @@ export default function CheckoutPage() {
           </CardContent>
         </Card>
       </div>
+
+      {order.earnedCoupon && (
+        <Dialog open={couponDialogOpen} onOpenChange={setCouponDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-center gap-2 text-center">
+                <Sparkles className="size-5 text-primary" />
+                You earned a coupon!
+              </DialogTitle>
+              <DialogDescription className="text-center">
+                Your milestone order unlocked a{" "}
+                {order.earnedCoupon.discountPercent}% off coupon for your next
+                order.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-3 rounded-md border border-primary/40 bg-primary/10 px-4 py-6">
+              <span className="text-xs font-medium uppercase tracking-wide text-primary">
+                Coupon code
+              </span>
+              <span className="font-mono text-3xl font-bold tracking-widest text-primary">
+                {order.earnedCoupon.code}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyCouponCode}
+              >
+                {copied ? (
+                  <>
+                    <Check className="size-3.5" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3.5" />
+                    Copy code
+                  </>
+                )}
+              </Button>
+            </div>
+            <DialogFooter>
+              <Button type="button" onClick={() => setCouponDialogOpen(false)}>
+                Got it
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      </>
     );
   }
 
@@ -283,6 +382,10 @@ export default function CheckoutPage() {
                   .
                 </p>
               )}
+              <p className="text-sm text-muted-foreground">
+                Coupons are earned on milestone orders and can be applied to any
+                order.
+              </p>
             </CardContent>
           </Card>
 

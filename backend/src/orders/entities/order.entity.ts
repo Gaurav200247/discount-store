@@ -1,3 +1,5 @@
+import { Coupon } from "../../coupons/entities/coupon.entity";
+
 export interface OrderLineItem {
   productId: string;
   name: string;
@@ -7,6 +9,8 @@ export interface OrderLineItem {
 }
 
 export class Order {
+  public earnedCoupon?: Coupon;
+
   constructor(
     public readonly id: string,
     public readonly lineItems: OrderLineItem[],

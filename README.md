@@ -1,6 +1,6 @@
 # Ecommerce Discount System
 
-A small ecommerce store with a reward-based discount system. Customers add items to a cart and check out; every *n*th order earns a coupon code worth `x%` off a future order, applied at checkout.
+A small ecommerce store with a reward-based discount system. Customers add items to a cart and check out; every *n*th order (a "milestone order") automatically earns a coupon code worth `x%` off. A coupon is single-use and can be applied to any order.
 
 - **Backend:** NestJS (TypeScript), in-memory storage, unit-tested business logic
 - **Frontend:** React + Vite + Tailwind (bonus)
@@ -73,12 +73,13 @@ All money fields are in integer cents.
 | DELETE | `/cart/:id`                  | Clear a cart                                 |
 | POST   | `/checkout`                  | Place an order (optionally with a coupon)    |
 | GET    | `/orders`                    | List orders                                  |
-| POST   | `/admin/coupons`             | Generate a coupon if a milestone is pending  |
-| GET    | `/admin/stats`               | Items purchased, revenue, coupons, discounts |
+| GET    | `/admin/stats`               | Items purchased, revenue, coupons, milestones |
 | GET    | `/admin/config`              | Current discount rule (`n`, `percent`)       |
 | PATCH  | `/admin/config`              | Update the discount rule at runtime          |
 
 ### Discount flow (quick demo)
+
+Coupons are generated **automatically**: every *n*th order (milestone order) mints a coupon. A coupon is single-use and can be applied to **any** order.
 
 1. Add a product to a cart:
    ```bash
@@ -87,19 +88,15 @@ All money fields are in integer cents.
      -d '{"productId":"mouse","quantity":2}'
    ```
    Copy the returned `id` as your `cartId`.
-2. Place `DISCOUNT_N` orders (default 5) without coupons.
-3. Mint the milestone coupon:
-   ```bash
-   curl -X POST localhost:3000/admin/coupons
-   ```
-   Copy the `code`.
-4. Check out with the coupon:
+2. Place `DISCOUNT_N` orders (default 5). The milestone order's response includes an `earnedCoupon` — e.g. `"earnedCoupon":{"code":"NODLXD92","discountPercent":10,"status":"unused",...}`.
+3. On any later order, check out with the coupon:
    ```bash
    curl -X POST localhost:3000/checkout \
      -H "Content-Type: application/json" \
-     -d '{"cartId":"<your-cart-id>","couponCode":"<code>"}'
+     -d '{"cartId":"<your-cart-id>","couponCode":"NODLXD92"}'
    ```
-5. View the store stats:
+   The coupon is marked `used` and cannot be applied again.
+4. View the store stats (including milestones reached):
    ```bash
    curl localhost:3000/admin/stats
    ```

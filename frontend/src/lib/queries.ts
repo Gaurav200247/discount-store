@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   createProductApi,
-  generateCouponApi,
   getDiscountConfigApi,
   getStatsApi,
   listOrdersApi,
@@ -58,13 +57,5 @@ export function useUpdateDiscountConfig() {
     mutationFn: updateDiscountConfigApi,
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["discount-config"] }),
-  });
-}
-
-export function useGenerateCoupon() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: generateCouponApi,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["stats"] }),
   });
 }

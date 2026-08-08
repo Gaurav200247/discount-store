@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import { InvalidCouponException } from "../common/exceptions/invalid-coupon.exception";
-import { NoMilestonePendingException } from "../common/exceptions/no-milestone-pending.exception";
 import { DiscountConfigService } from "../config/discount.config";
 import { CouponsRepository } from "./repo/coupons.repository";
 import { Coupon } from "./entities/coupon.entity";
@@ -23,23 +22,17 @@ export class CouponsService {
   ) {}
 
   generate(): Coupon {
-    const milestone = this.milestoneTracker.claimNextMilestone();
-    if (milestone === null) {
-      this.logger.warn("Coupon generation rejected: no milestone pending");
-      throw new NoMilestonePendingException();
-    }
-
     const coupon = new Coupon(
       generateCode(),
       this.config.percent,
       "unused",
-      milestone,
+      this.milestoneTracker.currentMilestone(),
     );
 
     this.couponsRepository.save(coupon);
 
     this.logger.log(
-      `Generated coupon ${coupon.code} (${coupon.discountPercent}% off) for milestone ${milestone}`,
+      `Generated coupon ${coupon.code} (${coupon.discountPercent}% off) for milestone ${coupon.issuedAtMilestone}`,
     );
 
     return coupon;

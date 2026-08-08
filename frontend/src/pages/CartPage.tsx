@@ -1,6 +1,8 @@
+import { useState } from "react";
 import {
   AlertTriangle,
   ArrowRight,
+  Check,
   ShoppingCart,
   Tag,
   Trash2,
@@ -14,8 +16,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QuantityStepper } from "@/components/cart/QuantityStepper";
 import { useCart } from "@/context/cart";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, percentOf } from "@/lib/format";
 import { useProducts, useStats } from "@/lib/queries";
+import type { Coupon } from "@/lib/types";
 
 export default function CartPage() {
   const {
@@ -29,6 +32,7 @@ export default function CartPage() {
   } = useCart();
   const { data: products, isLoading } = useProducts();
   const { data: stats } = useStats();
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
   const productsById = new Map((products ?? []).map((p) => [p.id, p]));
 
@@ -43,6 +47,11 @@ export default function CartPage() {
     (sum, { product, quantity }) => sum + product.priceCents * quantity,
     0,
   );
+
+  const discountCents = appliedCoupon
+    ? percentOf(subtotal, appliedCoupon.discountPercent)
+    : 0;
+  const updatedSubtotal = subtotal - discountCents;
 
   const availableCoupons = (stats?.coupons ?? []).filter(
     (coupon) => coupon.status === "unused",
@@ -157,11 +166,33 @@ export default function CartPage() {
           </div>
 
           <Card className="gap-0 py-0">
-            <CardContent className="flex items-center justify-between px-4 py-4">
-              <span className="font-medium">Subtotal</span>
-              <span className="text-xl font-bold tabular-nums">
-                {formatPrice(subtotal)}
-              </span>
+            <CardContent className="flex flex-col gap-1 px-4 py-4">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Subtotal</span>
+                <span className="text-xl font-bold tabular-nums">
+                  {formatPrice(subtotal)}
+                </span>
+              </div>
+              {appliedCoupon && (
+                <>
+                  <div className="flex items-center justify-between text-sm text-primary">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="size-3.5" />
+                      Coupon {appliedCoupon.code} ({appliedCoupon.discountPercent}%
+                      off)
+                    </span>
+                    <span className="tabular-nums">
+                      −{formatPrice(discountCents)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between border-t pt-2">
+                    <span className="font-medium">Updated subtotal</span>
+                    <span className="text-lg font-bold tabular-nums">
+                      {formatPrice(updatedSubtotal)}
+                    </span>
+                  </div>
+                </>
+              )}
             </CardContent>
             <div className="border-t px-4 py-4">
               <div className="mb-2 flex items-center gap-2">
@@ -173,36 +204,65 @@ export default function CartPage() {
               </div>
               {availableCoupons.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No unused coupons right now. Earn one on every nth order.
+                  No unused coupons right now. Earn one on every milestone
+                  order.
                 </p>
               ) : (
                 <ul className="divide-y">
-                  {availableCoupons.map((coupon) => (
-                    <li
-                      key={coupon.code}
-                      className="flex items-center justify-between gap-3 py-2"
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="font-mono text-sm font-semibold">
-                          {coupon.code}
-                        </span>
-                        <Badge variant="secondary">
-                          {coupon.discountPercent}% off
-                        </Badge>
-                      </div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link to={`/checkout?coupon=${coupon.code}`}>
-                          Apply
-                        </Link>
-                      </Button>
-                    </li>
-                  ))}
+                  {availableCoupons.map((coupon) => {
+                    const isApplied = appliedCoupon?.code === coupon.code;
+                    return (
+                      <li
+                        key={coupon.code}
+                        className="flex items-center justify-between gap-3 py-2"
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="font-mono text-sm font-semibold">
+                            {coupon.code}
+                          </span>
+                          <Badge variant="secondary">
+                            {coupon.discountPercent}% off
+                          </Badge>
+                          {coupon.issuedAtMilestone > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              earned on milestone {coupon.issuedAtMilestone}
+                            </span>
+                          )}
+                        </div>
+                        {isApplied ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setAppliedCoupon(null)}
+                          >
+                            <X className="size-3.5" />
+                            Remove
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setAppliedCoupon(coupon)}
+                          >
+                            <Check className="size-3.5" />
+                            Apply
+                          </Button>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
             <div className="border-t px-4 py-4">
               <Button asChild className="w-full" size="lg">
-                <Link to="/checkout">
+                <Link
+                  to={
+                    appliedCoupon
+                      ? `/checkout?coupon=${appliedCoupon.code}`
+                      : "/checkout"
+                  }
+                >
                   Proceed to checkout
                   <ArrowRight className="size-4" />
                 </Link>

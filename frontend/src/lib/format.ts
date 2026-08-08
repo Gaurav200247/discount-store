@@ -7,3 +7,8 @@ const priceFormatter = new Intl.NumberFormat("en-US", {
 export function formatPrice(cents: number): string {
   return priceFormatter.format(cents / 100);
 }
+
+/** Percentage of an amount in cents, rounded down to match the backend. */
+export function percentOf(amountCents: number, percent: number): number {
+  return Math.floor((amountCents * percent) / 100);
+}

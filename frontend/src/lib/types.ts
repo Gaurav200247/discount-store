@@ -30,6 +30,7 @@ export interface Order {
   discountCents: number;
   totalCents: number;
   couponCode?: string;
+  earnedCoupon?: Coupon;
   createdAt: string;
 }
 
@@ -38,6 +39,12 @@ export interface Coupon {
   discountPercent: number;
   status: "unused" | "used";
   issuedAtMilestone: number;
+}
+
+export interface MilestoneInfo {
+  milestone: number;
+  orderNumber: number;
+  coupon: Coupon | null;
 }
 
 export interface DiscountConfig {
@@ -50,4 +57,7 @@ export interface Stats {
   revenueCents: number;
   coupons: Coupon[];
   totalDiscountCents: number;
+  milestonesReached: number;
+  milestones: MilestoneInfo[];
+  ordersToNextMilestone: number;
 }

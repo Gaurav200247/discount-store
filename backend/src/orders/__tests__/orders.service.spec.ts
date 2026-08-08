@@ -20,7 +20,10 @@ function makeHarness(n = 5) {
   });
   const milestoneTracker = new MilestoneTrackerService(config);
   const redeem = jest.fn();
-  const couponsService = { redeem } as unknown as CouponsService;
+  const generate = jest.fn(
+    () => new Coupon("AUTOGEN01", 10, "unused", 1),
+  );
+  const couponsService = { redeem, generate } as unknown as CouponsService;
   const ordersRepository = new OrdersRepository();
   const ordersService = new OrdersService(
     cartService,
@@ -38,6 +41,7 @@ function makeHarness(n = 5) {
     milestoneTracker,
     ordersRepository,
     redeem,
+    generate,
   };
 }
 
@@ -93,6 +97,37 @@ describe("OrdersService", () => {
       expect(order.discountCents).toBe(Math.floor((2999 * 10) / 100)); // 299
       expect(order.totalCents).toBe(2700);
       expect(order.couponCode).toBe("ABC12345");
+    });
+
+    it("redeems a coupon on a regular (non-milestone) order", () => {
+      const { ordersService, cartService, redeem } = makeHarness(5);
+      redeem.mockReturnValue(new Coupon("ABC12345", 10, "used", 1));
+
+      const cart = cartService.addItem(undefined, "mouse", 1);
+      ordersService.checkout({ cartId: cart.id, couponCode: "ABC12345" });
+
+      expect(redeem).toHaveBeenCalledWith("ABC12345");
+    });
+
+    it("auto-generates a coupon and attaches it when a milestone order completes", () => {
+      const { ordersService, cartService, generate } = makeHarness(1);
+      const earned = new Coupon("AUTOGEN1", 10, "unused", 1);
+      generate.mockReturnValue(earned);
+
+      const cart = cartService.addItem(undefined, "mouse", 1);
+      const order = ordersService.checkout({ cartId: cart.id });
+
+      expect(generate).toHaveBeenCalledTimes(1);
+      expect(order.earnedCoupon).toBe(earned);
+    });
+
+    it("does not auto-generate a coupon on a regular order", () => {
+      const { ordersService, cartService, generate } = makeHarness(5);
+
+      const cart = cartService.addItem(undefined, "mouse", 1);
+      ordersService.checkout({ cartId: cart.id });
+
+      expect(generate).not.toHaveBeenCalled();
     });
 
     it("decrements stock and clears the cart after checkout", () => {

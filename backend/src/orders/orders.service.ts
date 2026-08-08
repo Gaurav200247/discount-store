@@ -53,6 +53,8 @@ export class OrdersService {
       `Checkout for cart ${cart.id}: ${lineItems.length} line item(s), subtotal ${subtotalCents}c`,
     );
 
+    const milestoneOrder = this.milestoneTracker.willBreakMilestoneOnNextOrder();
+
     // Reserve stock for every line item before committing anything, so the whole
     // order either succeeds (stock decremented) or fails (nothing changes).
     for (const item of lineItems) {
@@ -85,6 +87,12 @@ export class OrdersService {
     );
 
     this.milestoneTracker.recordOrder();
+    if (milestoneOrder) {
+      order.earnedCoupon = this.couponsService.generate();
+      this.logger.log(
+        `Order ${order.id}: milestone reached, auto-generated coupon ${order.earnedCoupon.code}`,
+      );
+    }
     for (const item of lineItems) {
       this.productsService.decrementStock(item.productId, item.quantity);
     }

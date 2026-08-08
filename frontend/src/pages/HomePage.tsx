@@ -44,15 +44,15 @@ export default function HomePage() {
       <section className="flex flex-col items-center gap-4 py-10 text-center">
         <Badge variant="secondary">
           <Sparkles className="size-3" />
-          Every nth order earns a coupon
+          Every milestone order earns a coupon
         </Badge>
         <h1 className="max-w-2xl text-4xl font-extrabold tracking-tight sm:text-5xl">
           Buy more, <span className="text-primary">unlock discounts</span>
         </h1>
         <p className="max-w-xl text-muted-foreground">
           {config
-            ? `On the ${config.n}th, ${config.n * 2}th, ${config.n * 3}th order… the store hands you a ${config.percent}% discount code to use at checkout.`
-            : "Every nth order earns a discount coupon to use at checkout."}
+            ? `On the ${config.n}th, ${config.n * 2}th, ${config.n * 3}th order… you earn a ${config.percent}% coupon to use on any order.`
+            : "Every milestone order earns a discount coupon you can use on any order."}
         </p>
       </section>
 

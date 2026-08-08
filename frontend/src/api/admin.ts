@@ -1,12 +1,8 @@
 import { request } from "./client";
-import type { Coupon, DiscountConfig, Stats } from "@/lib/types";
+import type { DiscountConfig, Stats } from "@/lib/types";
 
 export function getStatsApi() {
   return request<Stats>("/admin/stats");
-}
-
-export function generateCouponApi() {
-  return request<Coupon>("/admin/coupons", { method: "POST" });
 }
 
 export function getDiscountConfigApi() {

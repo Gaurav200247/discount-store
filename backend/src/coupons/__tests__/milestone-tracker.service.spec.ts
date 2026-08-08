@@ -24,28 +24,33 @@ describe("MilestoneTrackerService", () => {
     });
   });
 
-  describe("claimNextMilestone", () => {
-    it("returns null when no milestone is pending", () => {
-      const tracker = makeTracker();
-      expect(tracker.claimNextMilestone()).toBeNull();
+  describe("willBreakMilestoneOnNextOrder", () => {
+    it("returns true when the next order is the nth order", () => {
+      const tracker = makeTracker(3);
+      tracker.recordOrder();
+      tracker.recordOrder();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(true);
     });
 
-    it("claims the milestone after the nth order", () => {
+    it("returns false when the next order is not a milestone order", () => {
       const tracker = makeTracker(3);
-      for (let i = 0; i < 3; i += 1) {
-        tracker.recordOrder();
-      }
-      expect(tracker.claimNextMilestone()).toBe(1);
+      tracker.recordOrder();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(false);
     });
 
-    it("claims milestones sequentially, never skipping ahead", () => {
+    it("flips every nth order", () => {
       const tracker = makeTracker(3);
-      for (let i = 0; i < 6; i += 1) {
-        tracker.recordOrder();
-      }
-      expect(tracker.claimNextMilestone()).toBe(1);
-      expect(tracker.claimNextMilestone()).toBe(2);
-      expect(tracker.claimNextMilestone()).toBeNull();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(false);
+      tracker.recordOrder();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(false);
+      tracker.recordOrder();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(true);
+      tracker.recordOrder();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(false);
+      tracker.recordOrder();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(false);
+      tracker.recordOrder();
+      expect(tracker.willBreakMilestoneOnNextOrder()).toBe(true);
     });
   });
 });

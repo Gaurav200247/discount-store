@@ -1,5 +1,7 @@
+import { DiscountConfigService } from "../../config/discount.config";
 import { Coupon } from "../../coupons/entities/coupon.entity";
 import { CouponsRepository } from "../../coupons/repo/coupons.repository";
+import { MilestoneTrackerService } from "../../coupons/milestone-tracker.service";
 import { Order } from "../../orders/entities/order.entity";
 import { OrdersRepository } from "../../orders/repo/orders.repository";
 import { StatsService } from "../stats.service";
@@ -7,6 +9,11 @@ import { StatsService } from "../stats.service";
 function makeStats(orders: Order[] = [], coupons: Coupon[] = []): StatsService {
   const ordersRepository = new OrdersRepository();
   const couponsRepository = new CouponsRepository();
+  const config = new DiscountConfigService({
+    DISCOUNT_N: "5",
+    DISCOUNT_PERCENT: "10",
+  });
+  const milestoneTracker = new MilestoneTrackerService(config);
 
   for (const order of orders) {
     ordersRepository.save(order);
@@ -15,7 +22,12 @@ function makeStats(orders: Order[] = [], coupons: Coupon[] = []): StatsService {
     couponsRepository.save(coupon);
   }
 
-  return new StatsService(ordersRepository, couponsRepository);
+  return new StatsService(
+    ordersRepository,
+    couponsRepository,
+    milestoneTracker,
+    config,
+  );
 }
 
 describe("StatsService", () => {
@@ -26,6 +38,9 @@ describe("StatsService", () => {
     expect(stats.revenueCents).toBe(0);
     expect(stats.totalDiscountCents).toBe(0);
     expect(stats.coupons).toHaveLength(0);
+    expect(stats.milestonesReached).toBe(0);
+    expect(stats.milestones).toHaveLength(0);
+    expect(stats.ordersToNextMilestone).toBe(5);
   });
 
   it("aggregates items purchased, revenue and discounts", () => {
@@ -62,6 +77,7 @@ describe("StatsService", () => {
     expect(stats.revenueCents).toBe(108495);
     expect(stats.totalDiscountCents).toBe(500);
     expect(stats.coupons).toHaveLength(1);
+    expect(stats.ordersToNextMilestone).toBe(4);
   });
 
   it("sums totals across multiple orders", () => {

@@ -10,14 +10,12 @@ import { Request, Response } from "express";
 import { EmptyCartException } from "../exceptions/empty-cart.exception";
 import { InsufficientStockException } from "../exceptions/insufficient-stock.exception";
 import { InvalidCouponException } from "../exceptions/invalid-coupon.exception";
-import { NoMilestonePendingException } from "../exceptions/no-milestone-pending.exception";
 import { ProductNotFoundException } from "../exceptions/product-not-found.exception";
 
 const STATUS_BY_EXCEPTION: Record<string, HttpStatus> = {
   EmptyCartException: HttpStatus.BAD_REQUEST,
   InsufficientStockException: HttpStatus.CONFLICT,
   InvalidCouponException: HttpStatus.BAD_REQUEST,
-  NoMilestonePendingException: HttpStatus.CONFLICT,
   ProductNotFoundException: HttpStatus.NOT_FOUND,
 };
 

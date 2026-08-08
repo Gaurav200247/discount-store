@@ -28,9 +28,9 @@ This file documents the key design decisions made while building the ecommerce d
 - Option A: Auto-issue — the coupon is created automatically the moment the *n*th order completes.
 - Option B: On-demand — the admin explicitly calls `POST /admin/coupons`, which checks whether a milestone is pending and only then mints a coupon.
 
-**Choice:** Option B — coupons are generated on demand via the admin endpoint.
+**Choice:** Option A — coupons are auto-issued inside the checkout flow whenever a milestone order completes. There is no manual admin mint; the admin can only view stats and configuration.
 
-**Why:** The assignment explicitly lists "Generate a discount code" as an admin API, so the on-demand flow matches the required surface exactly. It also keeps the checkout path free of coupon-minting side effects and gives the store owner explicit control over when coupons are created.
+**Why:** Auto-issuing removes a manual step from the reward loop — a customer who completes a milestone order gets their coupon without any store-owner action. Because the checkout flow both detects the milestone and mints the coupon in one synchronous block, exactly one coupon per milestone is guaranteed.
 
 ---
 
@@ -94,18 +94,33 @@ This file documents the key design decisions made while building the ecommerce d
 
 ---
 
+## Decision: Coupon redemption — any order
+
+**Context:** A coupon could be redeemable on any order, or restricted to specific orders.
+
+**Options Considered:**
+
+- Option A: Redeemable on any future order (once a coupon exists, use it whenever).
+- Option B: Redeemable only when checking out the **next milestone order** — the coupon minted at milestone *N* is valid on milestone *N+1*'s breaker order, and regular orders never accept coupons.
+
+**Choice:** Option A — redemption is allowed on any order. A coupon is single-use and is marked `used` the first time it is successfully applied; there is no milestone gating at redemption.
+
+**Why:** Coupons are earned for completing milestone orders, but once earned they are a reward the customer can spend on whichever order they like. This keeps the scheme customer-friendly (a forgotten coupon is never forfeited) while the single-use transition inside `redeem()` still bounds total discount exposure.
+
+---
+
 ## Decision: Coupons per milestone — one coupon, claimed sequentially
 
-**Context:** Once the *n*th order is reached, how many coupons can the admin mint for that milestone, and what happens if the admin doesn't call `generate()` right away?
+**Context:** Once the *n*th order is reached, how many coupons can be minted for that milestone, and what happens to the milestone bookkeeping?
 
 **Options Considered:**
 
 - Option A: Mint unlimited coupons per milestone.
-- Option B: Exactly one coupon per milestone, and `generate()` always claims the _next_ unclaimed milestone (never skips ahead).
+- Option B: Exactly one auto-generated coupon per milestone.
 
-**Choice:** Option B — one coupon per milestone, claimed in order via a single atomic `claimNextMilestone()` call.
+**Choice:** Option B — the milestone tracker counts orders and the checkout mints exactly one coupon when a milestone is reached.
 
-**Why:** Unlimited coupons would let the admin dump infinite discounts. Sequential claiming means a milestone's coupon is never silently forfeited just because the admin was slow to call `generate()`; the system remembers that milestone 1 is still owed. Because check-and-claim happens in one method, the invariant holds by construction rather than by convention.
+**Why:** Auto-minting exactly once per milestone follows directly from the checkout flow: the milestone detection and coupon creation are two adjacent statements, so no separate "claim" bookkeeping is needed — the tracker's order counter alone decides eligibility. There is no admin mint, so the milestone tracker is the only source of coupons.
 
 ---
 
@@ -141,7 +156,7 @@ This file documents the key design decisions made while building the ecommerce d
 
 ## Decision: Admin endpoint authentication
 
-**Context:** The admin APIs (`generate coupon`, `stats`, `config`) are sensitive but the assignment didn't mention auth.
+**Context:** The admin APIs (`stats`, `config`) are sensitive but the assignment didn't mention auth.
 
 **Options Considered:**
 
